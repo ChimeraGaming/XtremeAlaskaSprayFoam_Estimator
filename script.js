@@ -21,7 +21,7 @@ const combinedTotals = document.getElementById("combined-totals");
 const savePdfBtn = document.getElementById("save-pdf-btn");
 const summaryEmptyText = summaryEmpty.querySelector("p");
 const projectEmptyStateText = projectEmptyState.querySelector("p");
-const defaultSummaryMessage = "Add a project and start entering details. The scorecard updates as you go.";
+const defaultSummaryMessage = "Add a project to start your estimate. The summary updates as you enter details.";
 const defaultProjectEmptyMessage = "Click Add Project to start your estimate.";
 
 initialize();
@@ -567,6 +567,8 @@ function syncProjectTitle(card) {
 
 function syncProjectStartState() {
   const hasProjects = projectList.children.length > 0;
+  form.classList.toggle("has-projects", hasProjects);
+  projectList.classList.toggle("hidden", !hasProjects);
   projectEmptyState.classList.toggle("hidden", hasProjects);
   if (!hasProjects) {
     projectEmptyStateText.textContent = defaultProjectEmptyMessage;
@@ -635,55 +637,72 @@ function downloadEstimatePdf(results) {
 
 function buildPdfLines(results) {
   const lines = [
-    { text: "XTREME ALASKA SPRAY FOAM", size: 18, gapAfter: 10 },
-    { text: "Customer Estimate", size: 13, gapAfter: 6 },
-    { text: "Troy | (907)315-0862 | xtremealaskasprayfoam@gmail.com", size: 11, gapAfter: 16 },
-    { text: "This estimate is based on closed cell spray foam, a high performance insulation used for Alaska climates.", size: 10, gapAfter: 6 },
-    { text: "Walls use a standard recommendation of R21 at about 3 inches. Ceilings use a standard recommendation of R49 at about 7 inches.", size: 10, gapAfter: 14 }
+    pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", gapAfter: 8 }),
+    pdfLine("Customer Estimate", { size: 13, font: "bold", gapAfter: 12 }),
+    pdfLine("Contact", { size: 11, font: "bold", gapAfter: 2 }),
+    pdfLine("Troy", { size: 11, indent: 12 }),
+    pdfLine("Phone: (907)315-0862", { size: 11, indent: 12 }),
+    pdfLine("Email: xtremealaskasprayfoam@gmail.com", { size: 11, indent: 12, gapAfter: 14 }),
+    pdfLine("Closed cell spray foam estimate for Alaska conditions.", { size: 10 }),
+    pdfLine("Standard wall recommendation: R21 at about 3 inches.", { size: 10 }),
+    pdfLine("Standard ceiling recommendation: R49 at about 7 inches.", { size: 10, gapAfter: 16 })
   ];
 
   results.projects.forEach(function (project, index) {
-    lines.push({ text: `Project ${index + 1}: ${project.projectName}`, size: 14, gapAfter: 8 });
-    lines.push({ text: `Project Type: ${project.projectType}`, size: 10 });
-    lines.push({ text: `Scope: ${project.scope}`, size: 10, gapAfter: 6 });
+    lines.push(pdfLine(`PROJECT ${index + 1}`, {
+      size: 15,
+      font: "bold",
+      gapAfter: 4,
+      pageBreakBefore: index > 0
+    }));
+    lines.push(pdfLine(project.projectName, { size: 15, font: "bold", gapAfter: 10 }));
+    lines.push(pdfLine("Project Details", { size: 11, font: "bold", gapAfter: 2 }));
+    lines.push(pdfLine(`Type: ${project.projectType}`, { size: 10, indent: 12 }));
+    lines.push(pdfLine(`Scope: ${project.scope}`, { size: 10, indent: 12, gapAfter: 10 }));
 
     if (project.needsWalls) {
-      lines.push({ text: `Wall Dimensions: ${formatNumber(project.wallWidth)} ft wide, ${formatNumber(project.wallLength)} ft long, ${formatNumber(project.wallHeight)} ft high`, size: 10 });
-      lines.push({ text: `Wall Sq Ft Math: ${getWallMathText(project, project.wallArea)}`, size: 10 });
-      lines.push({ text: `Wall Thickness: ${formatNumber(project.wallThickness)} inches`, size: 10 });
-      lines.push({ text: `Wall Square Footage: ${formatNumber(project.wallArea)} sq ft`, size: 10 });
-      lines.push({ text: `Wall Board Feet: ${formatNumber(project.wallBoardFeet)}`, size: 10 });
-      lines.push({ text: `Wall Cost: ${formatCurrency(project.wallCost)}`, size: 10, gapAfter: 6 });
+      lines.push(pdfLine("Walls", { size: 11, font: "bold", gapAfter: 2 }));
+      lines.push(pdfLine(`Width: ${formatNumber(project.wallWidth)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Length: ${formatNumber(project.wallLength)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Height: ${formatNumber(project.wallHeight)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Thickness: ${formatNumber(project.wallThickness)} inches`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Square Footage: ${formatNumber(project.wallArea)} sq ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Board Feet: ${formatNumber(project.wallBoardFeet)}`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, indent: 12, gapAfter: 10 }));
     }
 
     if (project.needsCeiling) {
-      lines.push({ text: `Roof/Ceiling Dimensions: ${formatNumber(project.ceilingWidth)} ft wide, ${formatNumber(project.ceilingLength)} ft long`, size: 10 });
-      lines.push({ text: `Ceiling Type: ${project.ceilingMode}`, size: 10 });
+      lines.push(pdfLine("Roof/Ceiling", { size: 11, font: "bold", gapAfter: 2 }));
+      lines.push(pdfLine(`Width: ${formatNumber(project.ceilingWidth)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Length: ${formatNumber(project.ceilingLength)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Type: ${project.ceilingMode}`, { size: 10, indent: 12 }));
 
       if (project.ceilingMode === "Pitched Roof") {
-        lines.push({ text: `Roof Pitch: ${formatNumber(project.roofPitch)} in 12`, size: 10 });
+        lines.push(pdfLine(`Pitch: ${formatNumber(project.roofPitch)} in 12`, { size: 10, indent: 12 }));
       }
 
-      lines.push({ text: `Roof/Ceiling Sq Ft Math: ${getCeilingMathText(project, project.ceilingOrRoofArea)}`, size: 10 });
-      lines.push({ text: `Ceiling Thickness: ${formatNumber(project.ceilingThickness)} inches`, size: 10 });
-      lines.push({ text: `${project.ceilingAreaLabel}: ${formatNumber(project.ceilingOrRoofArea)} sq ft`, size: 10 });
-      lines.push({ text: `Ceiling Board Feet: ${formatNumber(project.ceilingBoardFeet)}`, size: 10 });
-      lines.push({ text: `Ceiling Cost: ${formatCurrency(project.ceilingCost)}`, size: 10, gapAfter: 6 });
+      lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Square Footage: ${formatNumber(project.ceilingOrRoofArea)} sq ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Board Feet: ${formatNumber(project.ceilingBoardFeet)}`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.ceilingCost)}`, { size: 10, indent: 12, gapAfter: 10 }));
     }
 
-    lines.push({ text: `Total Square Footage: ${formatNumber(project.totalSquareFootage)} sq ft`, size: 10 });
-    lines.push({ text: `Total Board Feet: ${formatNumber(project.totalBoardFeet)}`, size: 10 });
-    lines.push({ text: `Cost per Board Foot: ${formatCurrency(project.costPerBoardFoot)}`, size: 10 });
-    lines.push({ text: `Estimated Total Cost: ${formatCurrency(project.totalCost)}`, size: 10, gapAfter: 14 });
+    lines.push(pdfLine("Project Totals", { size: 12, font: "bold", gapAfter: 3 }));
+    lines.push(pdfLine(`Total Square Footage: ${formatNumber(project.totalSquareFootage)} sq ft`, { size: 11, font: "bold", indent: 12 }));
+    lines.push(pdfLine(`Total Board Feet: ${formatNumber(project.totalBoardFeet)}`, { size: 11, font: "bold", indent: 12 }));
+    lines.push(pdfLine(`Cost per Board Foot: ${formatCurrency(project.costPerBoardFoot)}`, { size: 11, font: "bold", indent: 12 }));
+    lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", indent: 12, gapAfter: 18 }));
   });
 
-  lines.push({ text: "Combined Totals", size: 13, gapAfter: 8 });
-  lines.push({ text: `Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, size: 10 });
-  lines.push({ text: `Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, size: 10 });
-  lines.push({ text: `Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, size: 10, gapAfter: 14 });
-  lines.push({ text: "Estimate based on standard insulation values: Walls R21 at about 3 inches. Ceiling R49 at about 7 inches.", size: 10, gapAfter: 6 });
-  lines.push({ text: "Estimates are for informational purposes only. Final pricing may vary based on site conditions, materials, and project requirements. Contact Xtreme Alaska Spray Foam for an official quote.", size: 10, gapAfter: 6 });
-  lines.push({ text: "Call Troy at (907)315-0862 or email xtremealaskasprayfoam@gmail.com.", size: 10, gapAfter: 0 });
+  lines.push(pdfLine("COMBINED TOTALS", { size: 15, font: "bold", gapAfter: 6 }));
+  lines.push(pdfLine(`Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, { size: 12, font: "bold", indent: 12 }));
+  lines.push(pdfLine(`Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, { size: 12, font: "bold", indent: 12 }));
+  lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", indent: 12, gapAfter: 18 }));
+  lines.push(pdfLine("Important Notes", { size: 11, font: "bold", gapAfter: 2 }));
+  lines.push(pdfLine("Final pricing may change based on site conditions and materials.", { size: 10, indent: 12 }));
+  lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, indent: 12, gapAfter: 10 }));
+  lines.push(pdfLine("Phone: (907)315-0862", { size: 10, indent: 12 }));
+  lines.push(pdfLine("Email: xtremealaskasprayfoam@gmail.com", { size: 10, indent: 12 }));
 
   return lines;
 }
@@ -700,9 +719,15 @@ function createSimplePdf(lines) {
   let cursorY = pageHeight - topMargin;
 
   lines.forEach(function (line) {
+    if (line.pageBreakBefore && pages[pages.length - 1].length) {
+      pages.push([]);
+      cursorY = pageHeight - topMargin;
+    }
+
     const size = line.size || 11;
     const lineHeight = size + 5;
-    const wrappedLines = wrapText(line.text, usableWidth, size);
+    const indent = line.indent || 0;
+    const wrappedLines = wrapText(line.text, usableWidth - indent, size);
 
     wrappedLines.forEach(function (wrappedLine, index) {
       if (cursorY - lineHeight < bottomMargin) {
@@ -712,9 +737,10 @@ function createSimplePdf(lines) {
 
       pages[pages.length - 1].push({
         text: wrappedLine,
-        x: leftMargin,
+        x: leftMargin + indent,
         y: cursorY,
-        size
+        size,
+        font: line.font || "regular"
       });
       cursorY -= lineHeight;
 
@@ -732,17 +758,19 @@ function createSimplePdf(lines) {
 
   const catalogId = addObject("<< /Type /Catalog /Pages 0 0 R >>");
   const pagesId = addObject("<< /Type /Pages /Count 0 /Kids [] >>");
-  const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const fontRegularId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const fontBoldId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   const pageIds = [];
 
   pages.forEach(function (pageLines) {
     const stream = pageLines.map(function (entry) {
       const safeText = escapePdfText(entry.text);
-      return `BT /F1 ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`;
+      const fontKey = entry.font === "bold" ? "F2" : "F1";
+      return `BT /${fontKey} ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`;
     }).join("\n");
 
     const contentsId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
-    const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentsId} 0 R >>`);
+    const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> /Contents ${contentsId} 0 R >>`);
     pageIds.push(pageId);
   });
 
@@ -766,6 +794,18 @@ function createSimplePdf(lines) {
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
   return pdf;
+}
+
+function pdfLine(text, options) {
+  return {
+    text,
+    size: 11,
+    font: "regular",
+    gapAfter: 0,
+    indent: 0,
+    pageBreakBefore: false,
+    ...options
+  };
 }
 
 function wrapText(text, maxWidth, fontSize) {

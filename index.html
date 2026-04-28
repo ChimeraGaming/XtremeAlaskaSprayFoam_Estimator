@@ -10,8 +10,10 @@
   <div class="page-shell">
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Xtreme Alaska Spray Foam</p>
-        <h1>Spray Foam Estimate Calculator</h1>
+        <div class="brand-banner-frame">
+          <img class="brand-banner" src="Images/Banner.png" alt="Xtreme Alaska Spray Foam">
+        </div>
+        <p class="eyebrow">Customer Estimator</p>
         <p class="hero-text">Enter your project dimensions, choose the recommended thickness or your own values, and calculate board feet and estimated cost.</p>
         <p class="hero-note">Closed cell spray foam only. Estimates are based on board foot pricing and Alaska standard install values.</p>
       </div>
@@ -36,6 +38,7 @@
           <li>High R value per inch</li>
           <li>Moisture resistant</li>
           <li>Acts as an air and vapor barrier</li>
+          <li>Helps control condensation</li>
           <li>Adds structural strength</li>
           <li>Designed for harsh climates</li>
         </ul>
@@ -45,7 +48,6 @@
         <div class="panel-head">
           <div>
             <p class="section-label">Build Your Estimate</p>
-            <h2>Project Details</h2>
           </div>
         </div>
 
@@ -53,10 +55,9 @@
           <div class="builder-actions">
             <button type="button" class="primary-btn" id="add-project-btn">Add Project</button>
             <button type="button" class="ghost-btn" id="reset-btn">Reset</button>
-          </div>
-
-          <div id="project-empty-state" class="project-empty-state">
-            <p>Click Add Project to start your estimate.</p>
+            <div id="project-empty-state" class="project-empty-state">
+              <p>Click Add Project to start your estimate.</p>
+            </div>
           </div>
 
           <div id="project-list" class="project-list"></div>
@@ -97,12 +98,11 @@
           <div class="panel-head compact">
             <div>
               <p class="section-label">Estimate Summary</p>
-              <h2>Scorecard</h2>
             </div>
           </div>
 
           <div id="summary-empty" class="summary-empty">
-            <p>Add a project and start entering details. The scorecard updates as you go.</p>
+            <p>Add a project to start your estimate. The summary updates as you enter details.</p>
           </div>
 
           <div id="results-panel" class="results-panel hidden">
