@@ -5,12 +5,7 @@
 Customer facing spray foam estimate calculator for Xtreme Alaska Spray Foam.
 
 ## Live Site
-
-[https://chimeragaming.github.io/XtremeAlaskaSprayFoam_Estimator/](https://chimeragaming.github.io/XtremeAlaskaSprayFoam_Estimator/)
-
-## Repository
-
-[https://github.com/ChimeraGaming/XtremeAlaskaSprayFoam_Estimator](https://github.com/ChimeraGaming/XtremeAlaskaSprayFoam_Estimator)
+🟢[Get an Estimate!](https://chimeragaming.github.io/XtremeAlaskaSprayFoam_Estimator/)
 
 ## What It Does
 
