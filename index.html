@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xtreme Alaska Spray Foam Estimator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Xtreme Alaska Spray Foam</p>
+        <h1>Spray Foam Estimate Calculator</h1>
+        <p class="hero-text">Enter your project dimensions, choose the recommended thickness or your own values, and calculate board feet and estimated cost.</p>
+        <p class="hero-note">Closed cell spray foam only. Estimates are based on board foot pricing and Alaska standard install values.</p>
+      </div>
+      <aside class="contact-card">
+        <p class="contact-label">Contact</p>
+        <p class="contact-name">Troy</p>
+        <div class="contact-links">
+          <a href="tel:9073150862">(907)315-0862</a>
+          <a href="mailto:xtremealaskasprayfoam@gmail.com">xtremealaskasprayfoam@gmail.com</a>
+        </div>
+        <p class="tagline">Don't Wait. Insulate!</p>
+      </aside>
+    </header>
+
+    <main class="main-grid">
+      <section class="info-strip card">
+        <div>
+          <p class="section-label">Closed Cell Spray Foam</p>
+          <p class="section-text">This estimate is based on closed cell spray foam, a high performance insulation used for Alaska climates. It provides strong R value, moisture resistance, and air sealing.</p>
+        </div>
+        <ul class="feature-list">
+          <li>High R value per inch</li>
+          <li>Moisture resistant</li>
+          <li>Acts as an air and vapor barrier</li>
+          <li>Adds structural strength</li>
+          <li>Designed for harsh climates</li>
+        </ul>
+      </section>
+
+      <section class="form-panel card">
+        <div class="panel-head">
+          <div>
+            <p class="section-label">Build Your Estimate</p>
+            <h2>Project Details</h2>
+          </div>
+        </div>
+
+        <form id="estimate-form" novalidate>
+          <div class="builder-actions">
+            <button type="button" class="primary-btn" id="add-project-btn">Add Project</button>
+            <button type="button" class="ghost-btn" id="reset-btn">Reset</button>
+          </div>
+
+          <div id="project-empty-state" class="project-empty-state">
+            <p>Click Add Project to start your estimate.</p>
+          </div>
+
+          <div id="project-list" class="project-list"></div>
+
+          <section class="standards-panel">
+            <div>
+              <p class="section-label">Alaska Standards</p>
+              <h3>Recommended Install Values</h3>
+            </div>
+            <div class="standards-grid">
+              <article>
+                <p class="standard-title">Walls</p>
+                <p class="standard-value">R21</p>
+                <p class="standard-note">About 3 inches</p>
+              </article>
+              <article>
+                <p class="standard-title">Ceilings</p>
+                <p class="standard-value">R49</p>
+                <p class="standard-note">About 7 inches</p>
+              </article>
+              <article>
+                <p class="standard-title">Crawl Spaces</p>
+                <p class="standard-value">R14 minimum</p>
+                <p class="standard-note">Standard install is R21 at about 3 inches</p>
+              </article>
+            </div>
+            <p class="standards-footnote">Lower values require a signed waiver. Pricing may vary. Contact Troy for current rates.</p>
+          </section>
+
+          <div class="submit-row">
+            <button type="submit" class="primary-btn">Calculate Estimate</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="summary-panel">
+        <section class="sticky-panel card">
+          <div class="panel-head compact">
+            <div>
+              <p class="section-label">Estimate Summary</p>
+              <h2>Scorecard</h2>
+            </div>
+          </div>
+
+          <div id="summary-empty" class="summary-empty">
+            <p>Add a project and start entering details. The scorecard updates as you go.</p>
+          </div>
+
+          <div id="results-panel" class="results-panel hidden">
+            <div id="project-results" class="project-results"></div>
+
+            <section class="totals-card">
+              <h3>Combined Totals</h3>
+              <div class="totals-grid" id="combined-totals"></div>
+            </section>
+
+            <section class="quote-note">
+              <h3>Estimate Notes</h3>
+              <p>Estimate based on standard insulation values: Walls R21 at about 3 inches. Ceiling R49 at about 7 inches. Final pricing subject to material cost and site conditions.</p>
+              <p>Estimates are for informational purposes only. Final pricing may vary based on site conditions, materials, and project requirements. Contact Xtreme Alaska Spray Foam for an official quote.</p>
+              <p>Call Troy at <a href="tel:9073150862">(907)315-0862</a> or email <a href="mailto:xtremealaskasprayfoam@gmail.com">xtremealaskasprayfoam@gmail.com</a>.</p>
+            </section>
+
+            <div class="results-actions">
+              <button type="button" class="primary-btn save-btn" id="save-pdf-btn">Save Estimate</button>
+              <a class="secondary-btn mail-btn" href="mailto:xtremealaskasprayfoam@gmail.com?subject=Spray%20Foam%20Estimate%20Review">Email Troy</a>
+            </div>
+            <p class="button-note">Save this estimate as a PDF and send it to Troy at <a href="mailto:xtremealaskasprayfoam@gmail.com">xtremealaskasprayfoam@gmail.com</a> for review.</p>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <template id="project-template">
+    <section class="project-card" data-project-card>
+      <div class="project-head">
+        <div>
+          <p class="section-label">Project</p>
+          <h3 class="project-title">Project 1</h3>
+        </div>
+        <button type="button" class="remove-btn hidden" data-remove-project>Remove</button>
+      </div>
+
+      <div class="step-grid">
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">1</span>
+            <h4>Project Name</h4>
+          </div>
+          <label class="field">
+            <span>Project Name</span>
+            <input type="text" name="projectName" maxlength="80" placeholder="Garage, Crawl Space, Shop Ceiling" required>
+          </label>
+        </section>
+
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">2</span>
+            <h4>Project Type</h4>
+          </div>
+          <label class="field">
+            <span>Project Type</span>
+            <select name="projectType">
+              <option value="">Select project type</option>
+              <option value="Metal Building">Metal Building</option>
+              <option value="Hangar">Hangar</option>
+              <option value="Quonset Hut">Quonset Hut</option>
+              <option value="Connex Shipping Container">Connex Shipping Container</option>
+              <option value="Crawl Space">Crawl Space</option>
+              <option value="Enclosed Trailer">Enclosed Trailer</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="step-card hidden" data-step-scope>
+          <div class="step-head">
+            <span class="step-number">3</span>
+            <h4>What Needs Sprayed</h4>
+          </div>
+          <label class="field">
+            <span>Scope</span>
+            <select name="scope">
+              <option value="">Select scope</option>
+              <option value="Both">Both</option>
+              <option value="Walls">Walls</option>
+              <option value="Ceiling or Roof">Ceiling or Roof</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="step-card hidden" data-step-dimensions>
+          <div class="step-head">
+            <span class="step-number">4</span>
+            <h4 data-dimensions-title>Building Dimensions</h4>
+          </div>
+          <p class="field-note hidden" data-both-dimensions-note>Both selected. Enter one set for walls and one set for roof or ceiling.</p>
+          <div class="dimension-block hidden" data-wall-dimensions>
+            <div class="subsection-head">
+              <h5 data-wall-heading>Building Dimensions - Walls</h5>
+              <p class="subsection-note">Wall square footage uses wall width, wall length, and wall height.</p>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span>Wall Width ft</span>
+                <input type="number" name="wallWidth" min="0" step="0.1" placeholder="30" required>
+              </label>
+              <label class="field">
+                <span>Wall Length ft</span>
+                <input type="number" name="wallLength" min="0" step="0.1" placeholder="40" required>
+              </label>
+              <label class="field" data-height-field>
+                <span>Wall Height ft</span>
+                <input type="number" name="wallHeight" min="0" step="0.1" placeholder="12" required>
+              </label>
+            </div>
+          </div>
+
+          <div class="dimension-block hidden" data-ceiling-dimensions>
+            <div class="subsection-head">
+              <h5 data-ceiling-heading>Building Dimensions - Roof/Ceiling</h5>
+              <p class="subsection-note">Roof or ceiling square footage uses its own width and length, plus pitch when needed.</p>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span>Roof/Ceiling Width ft</span>
+                <input type="number" name="ceilingWidth" min="0" step="0.1" placeholder="30" required>
+              </label>
+              <label class="field">
+                <span>Roof/Ceiling Length ft</span>
+                <input type="number" name="ceilingLength" min="0" step="0.1" placeholder="40" required>
+              </label>
+              <label class="field" data-ceiling-mode-field>
+                <span>Ceiling Type</span>
+                <select name="ceilingMode">
+                  <option value="Pitched Roof">Pitched Roof</option>
+                  <option value="Flat Ceiling">Flat Ceiling</option>
+                </select>
+              </label>
+              <label class="field" data-roof-pitch-field>
+                <span>Roof Pitch X in 12</span>
+                <input type="number" name="roofPitch" min="0" step="0.1" placeholder="4" required>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">5</span>
+            <h4>Insulation Thickness</h4>
+          </div>
+          <label class="field">
+            <span>Thickness Setting</span>
+            <select name="thicknessMode">
+              <option value="standard">Standard Recommended</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <div class="thickness-panel">
+            <div class="recommendation-banner">
+              <p><strong>Walls:</strong> R21 at about 3 inches</p>
+              <p><strong>Ceiling:</strong> R49 at about 7 inches</p>
+            </div>
+            <p class="field-note">Custom thickness changes board feet and total cost. Board feet equals square footage times thickness in inches.</p>
+            <div class="field-grid hidden" data-custom-fields>
+              <label class="field" data-wall-thickness-field>
+                <span>Wall Thickness inches</span>
+                <input type="number" name="wallThickness" min="0" step="0.1" value="3">
+              </label>
+              <label class="field" data-ceiling-thickness-field>
+                <span>Ceiling Thickness inches</span>
+                <input type="number" name="ceilingThickness" min="0" step="0.1" value="7">
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="step-card">
+          <div class="step-head">
+            <span class="step-number">6</span>
+            <h4>Pricing</h4>
+          </div>
+          <label class="field">
+            <span>Cost per Board Foot</span>
+            <input type="number" name="costPerBoardFoot" min="0" step="0.01" placeholder="2.60" required>
+          </label>
+          <p class="field-note">Pricing may vary. Contact Troy for current rates.</p>
+        </section>
+      </div>
+
+      <div class="preview-bar">
+        <div>
+          <p class="preview-label">Live Preview</p>
+          <p class="preview-value" data-preview-square-footage>Square Footage: 0 sq ft</p>
+        </div>
+        <div>
+          <p class="preview-label">Material</p>
+          <p class="preview-value" data-preview-board-feet>Board Feet: 0</p>
+        </div>
+        <div>
+          <p class="preview-label">Projected Cost</p>
+          <p class="preview-value" data-preview-cost>Add pricing</p>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
