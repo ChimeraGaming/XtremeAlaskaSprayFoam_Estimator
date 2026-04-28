@@ -3,7 +3,7 @@ All rights reserved.
 
 This estimator and its public website output may be used at no charge for their intended purpose.
 
-No permission is granted to copy, modify, redistribute, republish, sublicense, sell, rebrand, reverse engineer, or create derivative works from any part of this project without prior written permission from Xtreme Alaska Spray Foam.
+No permission is granted to copy, modify, redistribute, republish, sublicense, sell, rebrand, reverse engineer, or create derivative works from any part of this project without prior written permission from Xtreme Alaska Spray Foam or ChimeraGaming who can be contacted [Here](https://github.com/ChimeraGaming/XtremeAlaskaSprayFoam_Estimator/issues).
 
 This restriction applies to the source code, layout, design, branding, logos, images, text, calculations, and other project materials.
 
