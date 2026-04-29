@@ -7,7 +7,8 @@ const PDF_THEME = {
   navy: [22, 48, 96],
   glacier: [158, 177, 208],
   slate: [84, 97, 120],
-  ink: [24, 29, 37]
+  ink: [24, 29, 37],
+  white: [255, 255, 255]
 };
 
 const state = {
@@ -355,15 +356,25 @@ function calculateProject(projectData, options) {
   }
 
   const { needsWalls, needsCeiling } = getScopeFlags(projectData.scope);
-  const slopeFactor = needsCeiling && projectData.ceilingMode === "Pitched Roof"
+  const isPitchedRoof = needsCeiling && projectData.ceilingMode === "Pitched Roof";
+  const slopeFactor = isPitchedRoof
     ? Math.sqrt(1 + (projectData.roofPitch / 12) ** 2)
     : 1;
+  const gableRise = isPitchedRoof
+    ? (projectData.ceilingWidth / 2) * (projectData.roofPitch / 12)
+    : 0;
+  const roofSurfaceArea = needsCeiling
+    ? projectData.ceilingLength * projectData.ceilingWidth * slopeFactor
+    : 0;
+  const gableArea = isPitchedRoof
+    ? projectData.ceilingWidth * gableRise
+    : 0;
 
   const wallArea = needsWalls
     ? 2 * projectData.wallLength * projectData.wallHeight + 2 * projectData.wallWidth * projectData.wallHeight
     : 0;
   const ceilingOrRoofArea = needsCeiling
-    ? projectData.ceilingLength * projectData.ceilingWidth * slopeFactor
+    ? roofSurfaceArea + gableArea
     : 0;
   const wallBoardFeet = needsWalls ? wallArea * projectData.wallThickness : 0;
   const ceilingBoardFeet = needsCeiling ? ceilingOrRoofArea * projectData.ceilingThickness : 0;
@@ -389,9 +400,12 @@ function calculateProject(projectData, options) {
     ceilingThickness: projectData.ceilingThickness,
     costPerBoardFoot: pricingIncluded ? projectData.costPerBoardFoot : null,
     slopeFactor,
+    gableRise,
+    roofSurfaceArea,
+    gableArea,
     wallArea,
     ceilingOrRoofArea,
-    ceilingAreaLabel: projectData.ceilingMode === "Flat Ceiling" ? "Ceiling Square Footage" : "Roof Square Footage",
+    ceilingAreaLabel: projectData.ceilingMode === "Flat Ceiling" ? "Ceiling Square Footage" : "Roof and Gable Square Footage",
     totalSquareFootage,
     wallBoardFeet,
     ceilingBoardFeet,
@@ -522,8 +536,11 @@ function getCeilingMathText(projectData, ceilingArea) {
 
   const pitch = hasZeroOrGreaterNumber(projectData.roofPitch) ? projectData.roofPitch : null;
   const slopeFactor = pitch === null ? "slope factor" : formatNumber(Math.sqrt(1 + (pitch / 12) ** 2));
+  const gableRise = hasPositiveNumber(projectData.ceilingWidth) && pitch !== null
+    ? formatNumber((projectData.ceilingWidth / 2) * (pitch / 12))
+    : "gable rise";
 
-  return `${length} x ${width} x ${slopeFactor} = ${areaText}`;
+  return `${length} x ${width} x ${slopeFactor} + ${width} x ${gableRise} = ${areaText}`;
 }
 
 function formatFormulaNumber(value, fallback) {
@@ -720,8 +737,16 @@ function downloadEstimatePdf(results) {
 
 function buildPdfLines(results) {
   const lines = [
-    pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", color: PDF_THEME.navy, gapAfter: 8 }),
-    pdfRule({ thickness: 4, color: PDF_THEME.navy, gapAfter: 10 }),
+    pdfLine("XTREME ALASKA SPRAY FOAM", {
+      size: 18,
+      font: "bold",
+      color: PDF_THEME.white,
+      background: PDF_THEME.navy,
+      backgroundWidth: "full",
+      backgroundPaddingX: 12,
+      backgroundPaddingY: 6,
+      gapAfter: 12
+    }),
     pdfLine("Customer Estimate", { size: 13, font: "bold", color: PDF_THEME.slate, gapAfter: 8 }),
     pdfLine("Customer Contact", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }),
     pdfLine(`Name: ${results.contact.firstName} ${results.contact.lastName}`.trim(), { size: 10, color: PDF_THEME.ink, indent: 12 }),
@@ -740,10 +765,14 @@ function buildPdfLines(results) {
 
   results.projects.forEach(function (project, index) {
     lines.push(pdfLine(`PROJECT ${index + 1}`, {
-      size: 15,
+      size: 13,
       font: "bold",
       color: PDF_THEME.navy,
-      gapAfter: 4,
+      background: PDF_THEME.glacier,
+      backgroundWidth: "full",
+      backgroundPaddingX: 10,
+      backgroundPaddingY: 4,
+      gapAfter: 6,
       pageBreakBefore: index > 0
     }));
     lines.push(pdfLine(project.projectName, { size: 15, font: "bold", color: PDF_THEME.ink, gapAfter: 8 }));
@@ -766,6 +795,7 @@ function buildPdfLines(results) {
 
       if (project.ceilingMode === "Pitched Roof") {
         lines.push(pdfLine(`Pitch: ${formatNumber(project.roofPitch)} in 12`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+        lines.push(pdfLine(`Roof Surface + Gable Ends: ${formatNumber(project.roofSurfaceArea)} sq ft + ${formatNumber(project.gableArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
       }
 
       lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
@@ -781,12 +811,30 @@ function buildPdfLines(results) {
     lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", color: PDF_THEME.navy, indent: 12, gapAfter: 14 }));
   });
 
-  lines.push(pdfLine("COMBINED TOTALS", { size: 15, font: "bold", color: PDF_THEME.navy, gapAfter: 6 }));
+  lines.push(pdfLine("COMBINED TOTALS", {
+    size: 13,
+    font: "bold",
+    color: PDF_THEME.navy,
+    background: PDF_THEME.glacier,
+    backgroundWidth: "full",
+    backgroundPaddingX: 10,
+    backgroundPaddingY: 4,
+    gapAfter: 6
+  }));
   lines.push(pdfLine(`Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, { size: 12, font: "bold", color: PDF_THEME.ink, indent: 12 }));
   lines.push(pdfLine(`Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, { size: 12, font: "bold", color: PDF_THEME.ink, indent: 12 }));
   lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", color: PDF_THEME.navy, indent: 12, gapAfter: 8 }));
   lines.push(pdfRule({ thickness: 2, color: PDF_THEME.glacier, gapAfter: 10 }));
-  lines.push(pdfLine("Important Notes", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
+  lines.push(pdfLine("Important Notes", {
+    size: 11,
+    font: "bold",
+    color: PDF_THEME.navy,
+    background: PDF_THEME.glacier,
+    backgroundWidth: "full",
+    backgroundPaddingX: 10,
+    backgroundPaddingY: 3,
+    gapAfter: 4
+  }));
   lines.push(pdfLine("Final pricing may change based on site conditions and materials.", { size: 10, color: PDF_THEME.slate, indent: 12 }));
   lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, color: PDF_THEME.slate, indent: 12 }));
   lines.push(pdfLine("Phone: (907)315-0862 | Email: xtremealaskasprayfoam@gmail.com", { size: 10, color: PDF_THEME.slate, indent: 12 }));
@@ -848,7 +896,12 @@ function createSimplePdf(lines) {
         y: cursorY,
         size,
         font: line.font || "regular",
-        color: line.color || PDF_THEME.ink
+        color: line.color || PDF_THEME.ink,
+        background: line.background || null,
+        backgroundWidth: line.backgroundWidth || null,
+        backgroundPaddingX: line.backgroundPaddingX || 0,
+        backgroundPaddingY: line.backgroundPaddingY || 0,
+        lineHeight
       });
       cursorY -= lineHeight;
 
@@ -884,7 +937,25 @@ function createSimplePdf(lines) {
       const [red, green, blue] = entry.color.map(function (value) {
         return (value / 255).toFixed(3);
       });
-      return `${red} ${green} ${blue} rg BT /${fontKey} ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`;
+      const commands = [];
+
+      if (entry.background) {
+        const [fillRed, fillGreen, fillBlue] = entry.background.map(function (value) {
+          return (value / 255).toFixed(3);
+        });
+        const paddingX = entry.backgroundPaddingX || 0;
+        const paddingY = entry.backgroundPaddingY || 0;
+        const rectX = entry.backgroundWidth === "full" ? leftMargin : entry.x - paddingX;
+        const rectWidth = entry.backgroundWidth === "full"
+          ? usableWidth
+          : measureTextWidth(entry.text, entry.size) + (paddingX * 2);
+        const rectY = entry.y - (entry.size * 0.35) - paddingY;
+        const rectHeight = Math.max(entry.size + (paddingY * 2) + 2, entry.lineHeight);
+        commands.push(`q ${fillRed} ${fillGreen} ${fillBlue} rg ${rectX} ${rectY} ${rectWidth} ${rectHeight} re f Q`);
+      }
+
+      commands.push(`${red} ${green} ${blue} rg BT /${fontKey} ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`);
+      return commands.join("\n");
     }).join("\n");
 
     const contentsId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
@@ -921,6 +992,10 @@ function pdfLine(text, options) {
     size: 11,
     font: "regular",
     color: PDF_THEME.ink,
+    background: null,
+    backgroundWidth: null,
+    backgroundPaddingX: 0,
+    backgroundPaddingY: 0,
     gapAfter: 0,
     indent: 0,
     pageBreakBefore: false,
@@ -961,6 +1036,10 @@ function wrapText(text, maxWidth, fontSize) {
   }
 
   return lines;
+}
+
+function measureTextWidth(text, fontSize) {
+  return String(text).length * fontSize * 0.52;
 }
 
 function escapePdfText(text) {
@@ -1194,6 +1273,7 @@ function createCompleteResultCard(project) {
 
     if (project.ceilingMode === "Pitched Roof") {
       metricRows.push(metricRow("Roof Pitch", `${formatNumber(project.roofPitch)} in 12`));
+      metricRows.push(metricRow("Gable End Square Footage", `${formatNumber(project.gableArea)} sq ft`));
     }
 
     metricRows.push(metricRow("Roof/Ceiling Sq Ft Math", getCeilingMathText(project, project.ceilingOrRoofArea)));
