@@ -259,6 +259,7 @@ a {
 
 .builder-actions {
   align-items: center;
+  margin-top: 10px;
   margin-bottom: 18px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
