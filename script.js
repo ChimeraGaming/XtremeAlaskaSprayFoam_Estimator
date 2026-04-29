@@ -14,6 +14,7 @@ const form = document.getElementById("estimate-form");
 const addProjectBtn = document.getElementById("add-project-btn");
 const resetBtn = document.getElementById("reset-btn");
 const projectEmptyState = document.getElementById("project-empty-state");
+const customerContactPanel = document.getElementById("customer-contact-panel");
 const resultsPanel = document.getElementById("results-panel");
 const summaryEmpty = document.getElementById("summary-empty");
 const projectResults = document.getElementById("project-results");
@@ -41,6 +42,20 @@ function bindTopLevelEvents() {
 
   resetBtn.addEventListener("click", function () {
     resetEstimate();
+  });
+
+  form.addEventListener("input", function (event) {
+    if (event.target.closest("[data-customer-contact]")) {
+      clearAllErrors();
+      updateLiveScorecard();
+    }
+  });
+
+  form.addEventListener("change", function (event) {
+    if (event.target.closest("[data-customer-contact]")) {
+      clearAllErrors();
+      updateLiveScorecard();
+    }
   });
 
   form.addEventListener("submit", function (event) {
@@ -235,6 +250,16 @@ function refreshAllPreviews() {
 function collectAndCalculate() {
   const projects = [];
   const errors = [];
+  const contact = getCustomerContactData();
+  const contactErrors = validateCustomerContact(contact);
+
+  if (contactErrors.length) {
+    errors.push({
+      container: customerContactPanel,
+      messages: contactErrors,
+      title: "Customer Contact"
+    });
+  }
 
   Array.from(projectList.children).forEach(function (card, index) {
     const projectData = getProjectData(card);
@@ -247,7 +272,8 @@ function collectAndCalculate() {
       errors.push({
         card,
         index,
-        messages: result.errors
+        messages: result.errors,
+        title: `Project ${index + 1}`
       });
       return;
     }
@@ -275,8 +301,18 @@ function collectAndCalculate() {
 
   return {
     isValid: true,
+    contact,
     projects,
     totals
+  };
+}
+
+function getCustomerContactData() {
+  return {
+    firstName: form.querySelector('input[name="customerFirstName"]').value.trim(),
+    lastName: form.querySelector('input[name="customerLastName"]').value.trim(),
+    phone: form.querySelector('input[name="customerPhone"]').value.trim(),
+    email: form.querySelector('input[name="customerEmail"]').value.trim()
   };
 }
 
@@ -422,6 +458,24 @@ function validateProject(projectData, options) {
   return errors;
 }
 
+function validateCustomerContact(contactData) {
+  const errors = [];
+
+  if (!contactData.firstName) {
+    errors.push("Enter a customer first name.");
+  }
+
+  if (!contactData.lastName) {
+    errors.push("Enter a customer last name.");
+  }
+
+  if (!contactData.phone && !contactData.email) {
+    errors.push("Enter a customer phone or email.");
+  }
+
+  return errors;
+}
+
 function getScopeFlags(scope) {
   return {
     needsWalls: scope === "Walls" || scope === "Both",
@@ -508,19 +562,26 @@ function createMetricRow(label, value) {
 }
 
 function renderValidationState(errors) {
-  errors.forEach(function ({ card, messages }, index) {
-    let banner = card.querySelector(".error-banner");
+  errors.forEach(function ({ card, container, messages, title }, index) {
+    const target = container || card;
+
+    if (!target) {
+      return;
+    }
+
+    let banner = target.querySelector(".error-banner");
     if (!banner) {
       banner = document.createElement("div");
       banner.className = "error-banner";
-      card.prepend(banner);
+      target.prepend(banner);
     }
 
-    banner.textContent = `Project ${index + 1}: ${messages[0]}`;
+    banner.textContent = title ? `${title}: ${messages[0]}` : `Project ${index + 1}: ${messages[0]}`;
   });
 
-  if (errors[0]?.card) {
-    errors[0].card.scrollIntoView({ behavior: "smooth", block: "start" });
+  const firstTarget = errors[0]?.container || errors[0]?.card;
+  if (firstTarget) {
+    firstTarget.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -531,6 +592,7 @@ function clearAllErrors() {
 }
 
 function resetEstimate() {
+  clearCustomerContactInputs();
   projectList.innerHTML = "";
   state.projectCount = 0;
   state.lastResults = null;
@@ -541,6 +603,20 @@ function resetEstimate() {
   summaryEmptyText.textContent = defaultSummaryMessage;
   syncProjectStartState();
   updateLiveScorecard();
+}
+
+function clearCustomerContactInputs() {
+  [
+    'input[name="customerFirstName"]',
+    'input[name="customerLastName"]',
+    'input[name="customerPhone"]',
+    'input[name="customerEmail"]'
+  ].forEach(function (selector) {
+    const input = form.querySelector(selector);
+    if (input) {
+      input.value = "";
+    }
+  });
 }
 
 function updateProjectTitles() {
@@ -638,14 +714,20 @@ function downloadEstimatePdf(results) {
 function buildPdfLines(results) {
   const lines = [
     pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", gapAfter: 8 }),
-    pdfLine("Customer Estimate", { size: 13, font: "bold", gapAfter: 12 }),
-    pdfLine("Contact", { size: 11, font: "bold", gapAfter: 2 }),
-    pdfLine("Troy", { size: 11, indent: 12 }),
-    pdfLine("Phone: (907)315-0862", { size: 11, indent: 12 }),
-    pdfLine("Email: xtremealaskasprayfoam@gmail.com", { size: 11, indent: 12, gapAfter: 14 }),
+    pdfLine("Customer Estimate", { size: 13, font: "bold", gapAfter: 8 }),
+    pdfLine("Troy | (907)315-0862 | xtremealaskasprayfoam@gmail.com", { size: 10, gapAfter: 10 }),
+    pdfLine("Customer Contact", { size: 11, font: "bold", gapAfter: 2 }),
+    pdfLine(`Name: ${results.contact.firstName} ${results.contact.lastName}`.trim(), { size: 10, indent: 12 }),
+    ...(results.contact.phone && results.contact.email
+      ? [
+          pdfLine(`Phone: ${results.contact.phone}`, { size: 10, indent: 12 }),
+          pdfLine(`Email: ${results.contact.email}`, { size: 10, indent: 12, gapAfter: 8 })
+        ]
+      : [
+          pdfLine(results.contact.phone ? `Phone: ${results.contact.phone}` : `Email: ${results.contact.email}`, { size: 10, indent: 12, gapAfter: 8 })
+        ]),
     pdfLine("Closed cell spray foam estimate for Alaska conditions.", { size: 10 }),
-    pdfLine("Standard wall recommendation: R21 at about 3 inches.", { size: 10 }),
-    pdfLine("Standard ceiling recommendation: R49 at about 7 inches.", { size: 10, gapAfter: 16 })
+    pdfLine("Standard walls: R21 at about 3 inches | Standard ceilings: R49 at about 7 inches.", { size: 10, gapAfter: 12 })
   ];
 
   results.projects.forEach(function (project, index) {
@@ -655,26 +737,22 @@ function buildPdfLines(results) {
       gapAfter: 4,
       pageBreakBefore: index > 0
     }));
-    lines.push(pdfLine(project.projectName, { size: 15, font: "bold", gapAfter: 10 }));
+    lines.push(pdfLine(project.projectName, { size: 15, font: "bold", gapAfter: 8 }));
     lines.push(pdfLine("Project Details", { size: 11, font: "bold", gapAfter: 2 }));
-    lines.push(pdfLine(`Type: ${project.projectType}`, { size: 10, indent: 12 }));
-    lines.push(pdfLine(`Scope: ${project.scope}`, { size: 10, indent: 12, gapAfter: 10 }));
+    lines.push(pdfLine(`Type: ${project.projectType} | Scope: ${project.scope}`, { size: 10, indent: 12, gapAfter: 8 }));
 
     if (project.needsWalls) {
       lines.push(pdfLine("Walls", { size: 11, font: "bold", gapAfter: 2 }));
-      lines.push(pdfLine(`Width: ${formatNumber(project.wallWidth)} ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Length: ${formatNumber(project.wallLength)} ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Height: ${formatNumber(project.wallHeight)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Dimensions: ${formatNumber(project.wallWidth)} ft x ${formatNumber(project.wallLength)} ft x ${formatNumber(project.wallHeight)} ft`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Thickness: ${formatNumber(project.wallThickness)} inches`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Square Footage: ${formatNumber(project.wallArea)} sq ft`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Board Feet: ${formatNumber(project.wallBoardFeet)}`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, indent: 12, gapAfter: 10 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, indent: 12, gapAfter: 8 }));
     }
 
     if (project.needsCeiling) {
       lines.push(pdfLine("Roof/Ceiling", { size: 11, font: "bold", gapAfter: 2 }));
-      lines.push(pdfLine(`Width: ${formatNumber(project.ceilingWidth)} ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Length: ${formatNumber(project.ceilingLength)} ft`, { size: 10, indent: 12 }));
+      lines.push(pdfLine(`Dimensions: ${formatNumber(project.ceilingWidth)} ft x ${formatNumber(project.ceilingLength)} ft`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Type: ${project.ceilingMode}`, { size: 10, indent: 12 }));
 
       if (project.ceilingMode === "Pitched Roof") {
@@ -684,25 +762,24 @@ function buildPdfLines(results) {
       lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Square Footage: ${formatNumber(project.ceilingOrRoofArea)} sq ft`, { size: 10, indent: 12 }));
       lines.push(pdfLine(`Board Feet: ${formatNumber(project.ceilingBoardFeet)}`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Cost: ${formatCurrency(project.ceilingCost)}`, { size: 10, indent: 12, gapAfter: 10 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.ceilingCost)}`, { size: 10, indent: 12, gapAfter: 8 }));
     }
 
     lines.push(pdfLine("Project Totals", { size: 12, font: "bold", gapAfter: 3 }));
     lines.push(pdfLine(`Total Square Footage: ${formatNumber(project.totalSquareFootage)} sq ft`, { size: 11, font: "bold", indent: 12 }));
     lines.push(pdfLine(`Total Board Feet: ${formatNumber(project.totalBoardFeet)}`, { size: 11, font: "bold", indent: 12 }));
     lines.push(pdfLine(`Cost per Board Foot: ${formatCurrency(project.costPerBoardFoot)}`, { size: 11, font: "bold", indent: 12 }));
-    lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", indent: 12, gapAfter: 18 }));
+    lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", indent: 12, gapAfter: 14 }));
   });
 
   lines.push(pdfLine("COMBINED TOTALS", { size: 15, font: "bold", gapAfter: 6 }));
   lines.push(pdfLine(`Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, { size: 12, font: "bold", indent: 12 }));
   lines.push(pdfLine(`Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, { size: 12, font: "bold", indent: 12 }));
-  lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", indent: 12, gapAfter: 18 }));
+  lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", indent: 12, gapAfter: 12 }));
   lines.push(pdfLine("Important Notes", { size: 11, font: "bold", gapAfter: 2 }));
   lines.push(pdfLine("Final pricing may change based on site conditions and materials.", { size: 10, indent: 12 }));
-  lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, indent: 12, gapAfter: 10 }));
-  lines.push(pdfLine("Phone: (907)315-0862", { size: 10, indent: 12 }));
-  lines.push(pdfLine("Email: xtremealaskasprayfoam@gmail.com", { size: 10, indent: 12 }));
+  lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, indent: 12 }));
+  lines.push(pdfLine("Phone: (907)315-0862 | Email: xtremealaskasprayfoam@gmail.com", { size: 10, indent: 12 }));
 
   return lines;
 }
@@ -710,10 +787,10 @@ function buildPdfLines(results) {
 function createSimplePdf(lines) {
   const pageWidth = 612;
   const pageHeight = 792;
-  const leftMargin = 54;
-  const rightMargin = 54;
-  const topMargin = 54;
-  const bottomMargin = 54;
+  const leftMargin = 42;
+  const rightMargin = 42;
+  const topMargin = 42;
+  const bottomMargin = 42;
   const usableWidth = pageWidth - leftMargin - rightMargin;
   const pages = [[]];
   let cursorY = pageHeight - topMargin;
@@ -725,7 +802,7 @@ function createSimplePdf(lines) {
     }
 
     const size = line.size || 11;
-    const lineHeight = size + 5;
+    const lineHeight = Math.max(size + 2, Math.round(size * 1.2));
     const indent = line.indent || 0;
     const wrappedLines = wrapText(line.text, usableWidth - indent, size);
 
@@ -858,6 +935,9 @@ function updateLiveScorecard() {
   summaryEmpty.classList.add("hidden");
   resultsPanel.classList.remove("hidden");
 
+  const contactSnapshot = getCustomerContactSnapshot();
+  projectResults.appendChild(createCustomerContactResultCard(contactSnapshot));
+
   const snapshots = projectCards.map(function (card) {
     return getProjectSnapshot(card);
   });
@@ -889,14 +969,16 @@ function updateLiveScorecard() {
   });
 
   appendCombinedTotals(totals, {
+    contactComplete: contactSnapshot.isComplete,
     completedCount: completedProjects.length,
     totalCount: snapshots.length,
     pricedCount: pricedProjects
   });
 
-  if (completedProjects.length === snapshots.length && pricedProjects === snapshots.length) {
+  if (contactSnapshot.isComplete && completedProjects.length === snapshots.length && pricedProjects === snapshots.length) {
     state.lastResults = {
       isValid: true,
+      contact: contactSnapshot.data,
       projects: completedProjects,
       totals
     };
@@ -906,6 +988,35 @@ function updateLiveScorecard() {
 
   state.lastResults = null;
   setSaveEstimateState(false);
+}
+
+function getCustomerContactSnapshot() {
+  const contactData = getCustomerContactData();
+  const missingFields = getCustomerContactMissingFields(contactData);
+
+  return {
+    data: contactData,
+    missingFields,
+    isComplete: !missingFields.length
+  };
+}
+
+function getCustomerContactMissingFields(contactData) {
+  const missingFields = [];
+
+  if (!contactData.firstName) {
+    missingFields.push("First name");
+  }
+
+  if (!contactData.lastName) {
+    missingFields.push("Last name");
+  }
+
+  if (!contactData.phone && !contactData.email) {
+    missingFields.push("Phone or email");
+  }
+
+  return missingFields;
 }
 
 function getProjectSnapshot(card) {
@@ -975,6 +1086,32 @@ function getMissingFields(projectData) {
   }
 
   return missingFields;
+}
+
+function createCustomerContactResultCard(snapshot) {
+  const article = document.createElement("article");
+  article.className = "result-card";
+  const metricRows = [];
+
+  if (snapshot.data.firstName || snapshot.data.lastName) {
+    metricRows.push(metricRow("Name", `${snapshot.data.firstName} ${snapshot.data.lastName}`.trim()));
+  }
+
+  if (snapshot.data.phone) {
+    metricRows.push(metricRow("Phone", snapshot.data.phone));
+  }
+
+  if (snapshot.data.email) {
+    metricRows.push(metricRow("Email", snapshot.data.email));
+  }
+
+  article.innerHTML = `
+    <h3>Customer Contact</h3>
+    ${metricRows.length ? `<div class="metric-grid">${metricRows.join("")}</div>` : ""}
+    ${snapshot.isComplete ? "" : `<p class="result-note">Complete these items: ${escapeHtml(snapshot.missingFields.join(", "))}.</p>`}
+  `;
+
+  return article;
 }
 
 function createCompleteResultCard(project) {
@@ -1113,14 +1250,16 @@ function appendCombinedTotals(totals, status) {
   combinedTotals.appendChild(createMetricRow("Total Square Footage", `${formatNumber(totals.totalSquareFootage)} sq ft`));
   combinedTotals.appendChild(createMetricRow("Total Board Feet", formatNumber(totals.totalBoardFeet)));
 
-  if (status.completedCount && status.pricedCount === status.completedCount && status.completedCount === status.totalCount) {
+  if (status.contactComplete && status.completedCount && status.pricedCount === status.completedCount && status.completedCount === status.totalCount) {
     combinedTotals.appendChild(createMetricRow("Total Estimated Cost", formatCurrency(totals.totalCost)));
   }
 
   const note = document.createElement("p");
   note.className = "totals-note";
 
-  if (!status.completedCount) {
+  if (!status.contactComplete) {
+    note.textContent = "Add customer contact details to save the estimate.";
+  } else if (!status.completedCount) {
     note.textContent = "Complete the required wall or roof fields to calculate totals.";
   } else if (status.completedCount < status.totalCount) {
     note.textContent = "Totals include projects with enough details to calculate square footage and board feet.";

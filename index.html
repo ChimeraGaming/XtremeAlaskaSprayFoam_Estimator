@@ -18,7 +18,7 @@
         <p class="hero-note">Closed cell spray foam only. Estimates are based on board foot pricing and Alaska standard install values.</p>
       </div>
       <aside class="contact-card">
-        <p class="contact-label">Contact</p>
+        <p class="contact-label">Business Contact</p>
         <p class="contact-name">Troy</p>
         <div class="contact-links">
           <a href="tel:9073150862">(907)315-0862</a>
@@ -52,6 +52,31 @@
         </div>
 
         <form id="estimate-form" novalidate>
+          <section class="contact-intake" id="customer-contact-panel" data-customer-contact>
+            <div>
+              <p class="section-label">Customer Contact</p>
+              <p class="field-note">Required: first name, last name, and at least one contact method.</p>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span>First Name</span>
+                <input type="text" name="customerFirstName" maxlength="60" placeholder="John">
+              </label>
+              <label class="field">
+                <span>Last Name</span>
+                <input type="text" name="customerLastName" maxlength="60" placeholder="Smith">
+              </label>
+              <label class="field">
+                <span>Phone</span>
+                <input type="tel" name="customerPhone" maxlength="40" placeholder="(907)555-1234">
+              </label>
+              <label class="field">
+                <span>Email</span>
+                <input type="email" name="customerEmail" maxlength="120" placeholder="name@example.com">
+              </label>
+            </div>
+          </section>
+
           <div class="builder-actions">
             <button type="button" class="primary-btn" id="add-project-btn">Add Project</button>
             <button type="button" class="ghost-btn" id="reset-btn">Reset</button>
