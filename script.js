@@ -3,6 +3,13 @@ const STANDARD_VALUES = {
   ceilingThickness: 7
 };
 
+const PDF_THEME = {
+  navy: [22, 48, 96],
+  glacier: [158, 177, 208],
+  slate: [84, 97, 120],
+  ink: [24, 29, 37]
+};
+
 const state = {
   projectCount: 0,
   lastResults: null
@@ -713,72 +720,76 @@ function downloadEstimatePdf(results) {
 
 function buildPdfLines(results) {
   const lines = [
-    pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", gapAfter: 8 }),
-    pdfLine("Customer Estimate", { size: 13, font: "bold", gapAfter: 8 }),
-    pdfLine("Customer Contact", { size: 11, font: "bold", gapAfter: 2 }),
-    pdfLine(`Name: ${results.contact.firstName} ${results.contact.lastName}`.trim(), { size: 10, indent: 12 }),
+    pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", color: PDF_THEME.navy, gapAfter: 8 }),
+    pdfRule({ thickness: 4, color: PDF_THEME.navy, gapAfter: 10 }),
+    pdfLine("Customer Estimate", { size: 13, font: "bold", color: PDF_THEME.slate, gapAfter: 8 }),
+    pdfLine("Customer Contact", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }),
+    pdfLine(`Name: ${results.contact.firstName} ${results.contact.lastName}`.trim(), { size: 10, color: PDF_THEME.ink, indent: 12 }),
     ...(results.contact.phone && results.contact.email
       ? [
-          pdfLine(`Phone: ${results.contact.phone}`, { size: 10, indent: 12 }),
-          pdfLine(`Email: ${results.contact.email}`, { size: 10, indent: 12, gapAfter: 8 })
+          pdfLine(`Phone: ${results.contact.phone}`, { size: 10, color: PDF_THEME.ink, indent: 12 }),
+          pdfLine(`Email: ${results.contact.email}`, { size: 10, color: PDF_THEME.ink, indent: 12, gapAfter: 8 })
         ]
       : [
-          pdfLine(results.contact.phone ? `Phone: ${results.contact.phone}` : `Email: ${results.contact.email}`, { size: 10, indent: 12, gapAfter: 8 })
+          pdfLine(results.contact.phone ? `Phone: ${results.contact.phone}` : `Email: ${results.contact.email}`, { size: 10, color: PDF_THEME.ink, indent: 12, gapAfter: 8 })
         ]),
-    pdfLine("Closed cell spray foam estimate for Alaska conditions.", { size: 10 }),
-    pdfLine("Standard walls: R21 at about 3 inches | Standard ceilings: R49 at about 7 inches.", { size: 10, gapAfter: 12 })
+    pdfLine("Closed cell spray foam estimate for Alaska conditions.", { size: 10, color: PDF_THEME.slate }),
+    pdfLine("Standard walls: R21 at about 3 inches | Standard ceilings: R49 at about 7 inches.", { size: 10, color: PDF_THEME.slate, gapAfter: 8 }),
+    pdfRule({ thickness: 2, color: PDF_THEME.glacier, gapAfter: 10 })
   ];
 
   results.projects.forEach(function (project, index) {
     lines.push(pdfLine(`PROJECT ${index + 1}`, {
       size: 15,
       font: "bold",
+      color: PDF_THEME.navy,
       gapAfter: 4,
       pageBreakBefore: index > 0
     }));
-    lines.push(pdfLine(project.projectName, { size: 15, font: "bold", gapAfter: 8 }));
-    lines.push(pdfLine("Project Details", { size: 11, font: "bold", gapAfter: 2 }));
-    lines.push(pdfLine(`Type: ${project.projectType} | Scope: ${project.scope}`, { size: 10, indent: 12, gapAfter: 8 }));
+    lines.push(pdfLine(project.projectName, { size: 15, font: "bold", color: PDF_THEME.ink, gapAfter: 8 }));
+    lines.push(pdfLine("Project Details", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
+    lines.push(pdfLine(`Type: ${project.projectType} | Scope: ${project.scope}`, { size: 10, color: PDF_THEME.ink, indent: 12, gapAfter: 8 }));
 
     if (project.needsWalls) {
-      lines.push(pdfLine("Walls", { size: 11, font: "bold", gapAfter: 2 }));
-      lines.push(pdfLine(`Dimensions: ${formatNumber(project.wallWidth)} ft x ${formatNumber(project.wallLength)} ft x ${formatNumber(project.wallHeight)} ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Thickness: ${formatNumber(project.wallThickness)} inches`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Square Footage: ${formatNumber(project.wallArea)} sq ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Board Feet: ${formatNumber(project.wallBoardFeet)}`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, indent: 12, gapAfter: 8 }));
+      lines.push(pdfLine("Walls", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
+      lines.push(pdfLine(`Dimensions: ${formatNumber(project.wallWidth)} ft x ${formatNumber(project.wallLength)} ft x ${formatNumber(project.wallHeight)} ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Thickness: ${formatNumber(project.wallThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Square Footage: ${formatNumber(project.wallArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Board Feet: ${formatNumber(project.wallBoardFeet)}`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, color: PDF_THEME.slate, indent: 12, gapAfter: 8 }));
     }
 
     if (project.needsCeiling) {
-      lines.push(pdfLine("Roof/Ceiling", { size: 11, font: "bold", gapAfter: 2 }));
-      lines.push(pdfLine(`Dimensions: ${formatNumber(project.ceilingWidth)} ft x ${formatNumber(project.ceilingLength)} ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Type: ${project.ceilingMode}`, { size: 10, indent: 12 }));
+      lines.push(pdfLine("Roof/Ceiling", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
+      lines.push(pdfLine(`Dimensions: ${formatNumber(project.ceilingWidth)} ft x ${formatNumber(project.ceilingLength)} ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Type: ${project.ceilingMode}`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
 
       if (project.ceilingMode === "Pitched Roof") {
-        lines.push(pdfLine(`Pitch: ${formatNumber(project.roofPitch)} in 12`, { size: 10, indent: 12 }));
+        lines.push(pdfLine(`Pitch: ${formatNumber(project.roofPitch)} in 12`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
       }
 
-      lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Square Footage: ${formatNumber(project.ceilingOrRoofArea)} sq ft`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Board Feet: ${formatNumber(project.ceilingBoardFeet)}`, { size: 10, indent: 12 }));
-      lines.push(pdfLine(`Cost: ${formatCurrency(project.ceilingCost)}`, { size: 10, indent: 12, gapAfter: 8 }));
+      lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Square Footage: ${formatNumber(project.ceilingOrRoofArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Board Feet: ${formatNumber(project.ceilingBoardFeet)}`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`Cost: ${formatCurrency(project.ceilingCost)}`, { size: 10, color: PDF_THEME.slate, indent: 12, gapAfter: 8 }));
     }
 
-    lines.push(pdfLine("Project Totals", { size: 12, font: "bold", gapAfter: 3 }));
-    lines.push(pdfLine(`Total Square Footage: ${formatNumber(project.totalSquareFootage)} sq ft`, { size: 11, font: "bold", indent: 12 }));
-    lines.push(pdfLine(`Total Board Feet: ${formatNumber(project.totalBoardFeet)}`, { size: 11, font: "bold", indent: 12 }));
-    lines.push(pdfLine(`Cost per Board Foot: ${formatCurrency(project.costPerBoardFoot)}`, { size: 11, font: "bold", indent: 12 }));
-    lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", indent: 12, gapAfter: 14 }));
+    lines.push(pdfLine("Project Totals", { size: 12, font: "bold", color: PDF_THEME.navy, gapAfter: 3 }));
+    lines.push(pdfLine(`Total Square Footage: ${formatNumber(project.totalSquareFootage)} sq ft`, { size: 11, font: "bold", color: PDF_THEME.ink, indent: 12 }));
+    lines.push(pdfLine(`Total Board Feet: ${formatNumber(project.totalBoardFeet)}`, { size: 11, font: "bold", color: PDF_THEME.ink, indent: 12 }));
+    lines.push(pdfLine(`Cost per Board Foot: ${formatCurrency(project.costPerBoardFoot)}`, { size: 11, font: "bold", color: PDF_THEME.ink, indent: 12 }));
+    lines.push(pdfLine(`Estimated Total Cost: ${formatCurrency(project.totalCost)}`, { size: 13, font: "bold", color: PDF_THEME.navy, indent: 12, gapAfter: 14 }));
   });
 
-  lines.push(pdfLine("COMBINED TOTALS", { size: 15, font: "bold", gapAfter: 6 }));
-  lines.push(pdfLine(`Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, { size: 12, font: "bold", indent: 12 }));
-  lines.push(pdfLine(`Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, { size: 12, font: "bold", indent: 12 }));
-  lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", indent: 12, gapAfter: 12 }));
-  lines.push(pdfLine("Important Notes", { size: 11, font: "bold", gapAfter: 2 }));
-  lines.push(pdfLine("Final pricing may change based on site conditions and materials.", { size: 10, indent: 12 }));
-  lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, indent: 12 }));
-  lines.push(pdfLine("Phone: (907)315-0862 | Email: xtremealaskasprayfoam@gmail.com", { size: 10, indent: 12 }));
+  lines.push(pdfLine("COMBINED TOTALS", { size: 15, font: "bold", color: PDF_THEME.navy, gapAfter: 6 }));
+  lines.push(pdfLine(`Total Square Footage: ${formatNumber(results.totals.totalSquareFootage)} sq ft`, { size: 12, font: "bold", color: PDF_THEME.ink, indent: 12 }));
+  lines.push(pdfLine(`Total Board Feet: ${formatNumber(results.totals.totalBoardFeet)}`, { size: 12, font: "bold", color: PDF_THEME.ink, indent: 12 }));
+  lines.push(pdfLine(`Total Estimated Cost: ${formatCurrency(results.totals.totalCost)}`, { size: 14, font: "bold", color: PDF_THEME.navy, indent: 12, gapAfter: 8 }));
+  lines.push(pdfRule({ thickness: 2, color: PDF_THEME.glacier, gapAfter: 10 }));
+  lines.push(pdfLine("Important Notes", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
+  lines.push(pdfLine("Final pricing may change based on site conditions and materials.", { size: 10, color: PDF_THEME.slate, indent: 12 }));
+  lines.push(pdfLine("Send this estimate to Troy for review before treating it as a final quote.", { size: 10, color: PDF_THEME.slate, indent: 12 }));
+  lines.push(pdfLine("Phone: (907)315-0862 | Email: xtremealaskasprayfoam@gmail.com", { size: 10, color: PDF_THEME.slate, indent: 12 }));
 
   return lines;
 }
@@ -800,6 +811,26 @@ function createSimplePdf(lines) {
       cursorY = pageHeight - topMargin;
     }
 
+    if (line.kind === "rule") {
+      const ruleHeight = line.thickness + (line.gapAfter || 0);
+
+      if (cursorY - ruleHeight < bottomMargin) {
+        pages.push([]);
+        cursorY = pageHeight - topMargin;
+      }
+
+      pages[pages.length - 1].push({
+        kind: "rule",
+        x1: leftMargin,
+        x2: pageWidth - rightMargin,
+        y: cursorY,
+        thickness: line.thickness,
+        color: line.color
+      });
+      cursorY -= ruleHeight;
+      return;
+    }
+
     const size = line.size || 11;
     const lineHeight = Math.max(size + 2, Math.round(size * 1.2));
     const indent = line.indent || 0;
@@ -816,7 +847,8 @@ function createSimplePdf(lines) {
         x: leftMargin + indent,
         y: cursorY,
         size,
-        font: line.font || "regular"
+        font: line.font || "regular",
+        color: line.color || PDF_THEME.ink
       });
       cursorY -= lineHeight;
 
@@ -840,9 +872,19 @@ function createSimplePdf(lines) {
 
   pages.forEach(function (pageLines) {
     const stream = pageLines.map(function (entry) {
+      if (entry.kind === "rule") {
+        const [red, green, blue] = entry.color.map(function (value) {
+          return (value / 255).toFixed(3);
+        });
+        return `${red} ${green} ${blue} RG ${entry.thickness} w ${entry.x1} ${entry.y} m ${entry.x2} ${entry.y} l S`;
+      }
+
       const safeText = escapePdfText(entry.text);
       const fontKey = entry.font === "bold" ? "F2" : "F1";
-      return `BT /${fontKey} ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`;
+      const [red, green, blue] = entry.color.map(function (value) {
+        return (value / 255).toFixed(3);
+      });
+      return `${red} ${green} ${blue} rg BT /${fontKey} ${entry.size} Tf 1 0 0 1 ${entry.x} ${entry.y} Tm (${safeText}) Tj ET`;
     }).join("\n");
 
     const contentsId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
@@ -874,11 +916,24 @@ function createSimplePdf(lines) {
 
 function pdfLine(text, options) {
   return {
+    kind: "text",
     text,
     size: 11,
     font: "regular",
+    color: PDF_THEME.ink,
     gapAfter: 0,
     indent: 0,
+    pageBreakBefore: false,
+    ...options
+  };
+}
+
+function pdfRule(options) {
+  return {
+    kind: "rule",
+    thickness: 1.5,
+    color: [22, 48, 96],
+    gapAfter: 0,
     pageBreakBefore: false,
     ...options
   };
