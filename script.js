@@ -366,17 +366,21 @@ function calculateProject(projectData, options) {
   const roofSurfaceArea = needsCeiling
     ? projectData.ceilingLength * projectData.ceilingWidth * slopeFactor
     : 0;
-  const gableArea = isPitchedRoof
+  const gableArea = needsWalls && isPitchedRoof
     ? projectData.ceilingWidth * gableRise
     : 0;
+  const gableThickness = gableArea > 0 ? projectData.wallThickness : 0;
 
-  const wallArea = needsWalls
+  const rectangularWallArea = needsWalls
     ? 2 * projectData.wallLength * projectData.wallHeight + 2 * projectData.wallWidth * projectData.wallHeight
     : 0;
+  const wallArea = rectangularWallArea + gableArea;
   const ceilingOrRoofArea = needsCeiling
-    ? roofSurfaceArea + gableArea
+    ? roofSurfaceArea
     : 0;
-  const wallBoardFeet = needsWalls ? wallArea * projectData.wallThickness : 0;
+  const rectangularWallBoardFeet = needsWalls ? rectangularWallArea * projectData.wallThickness : 0;
+  const gableBoardFeet = gableArea > 0 ? gableArea * gableThickness : 0;
+  const wallBoardFeet = rectangularWallBoardFeet + gableBoardFeet;
   const ceilingBoardFeet = needsCeiling ? ceilingOrRoofArea * projectData.ceilingThickness : 0;
   const totalSquareFootage = wallArea + ceilingOrRoofArea;
   const totalBoardFeet = wallBoardFeet + ceilingBoardFeet;
@@ -398,15 +402,19 @@ function calculateProject(projectData, options) {
     ceilingMode: projectData.ceilingMode,
     wallThickness: projectData.wallThickness,
     ceilingThickness: projectData.ceilingThickness,
+    gableThickness,
     costPerBoardFoot: pricingIncluded ? projectData.costPerBoardFoot : null,
     slopeFactor,
     gableRise,
+    rectangularWallArea,
     roofSurfaceArea,
     gableArea,
     wallArea,
     ceilingOrRoofArea,
-    ceilingAreaLabel: projectData.ceilingMode === "Flat Ceiling" ? "Ceiling Square Footage" : "Roof and Gable Square Footage",
+    ceilingAreaLabel: projectData.ceilingMode === "Flat Ceiling" ? "Ceiling Square Footage" : "Roof Square Footage",
     totalSquareFootage,
+    rectangularWallBoardFeet,
+    gableBoardFeet,
     wallBoardFeet,
     ceilingBoardFeet,
     wallCost: pricingIncluded && needsWalls ? wallBoardFeet * projectData.costPerBoardFoot : null,
@@ -521,6 +529,18 @@ function getWallMathText(projectData, wallArea) {
   const length = formatFormulaNumber(projectData.wallLength, "length");
   const height = formatFormulaNumber(projectData.wallHeight, "height");
   const areaText = Number.isFinite(wallArea) ? `${formatNumber(wallArea)} sq ft` : "0 sq ft";
+  const { needsWalls, needsCeiling } = getScopeFlags(projectData.scope);
+  const hasGableMath = needsWalls
+    && needsCeiling
+    && projectData.ceilingMode === "Pitched Roof"
+    && hasPositiveNumber(projectData.ceilingWidth)
+    && hasZeroOrGreaterNumber(projectData.roofPitch);
+
+  if (hasGableMath) {
+    const gableWidth = formatFormulaNumber(projectData.ceilingWidth, "roof width");
+    const gableRise = formatNumber((projectData.ceilingWidth / 2) * (projectData.roofPitch / 12));
+    return `2 x ${length} x ${height} + 2 x ${width} x ${height} + ${gableWidth} x ${gableRise} = ${areaText}`;
+  }
 
   return `2 x ${length} x ${height} + 2 x ${width} x ${height} = ${areaText}`;
 }
@@ -536,11 +556,8 @@ function getCeilingMathText(projectData, ceilingArea) {
 
   const pitch = hasZeroOrGreaterNumber(projectData.roofPitch) ? projectData.roofPitch : null;
   const slopeFactor = pitch === null ? "slope factor" : formatNumber(Math.sqrt(1 + (pitch / 12) ** 2));
-  const gableRise = hasPositiveNumber(projectData.ceilingWidth) && pitch !== null
-    ? formatNumber((projectData.ceilingWidth / 2) * (pitch / 12))
-    : "gable rise";
 
-  return `${length} x ${width} x ${slopeFactor} + ${width} x ${gableRise} = ${areaText}`;
+  return `${length} x ${width} x ${slopeFactor} = ${areaText}`;
 }
 
 function formatFormulaNumber(value, fallback) {
@@ -782,8 +799,13 @@ function buildPdfLines(results) {
     if (project.needsWalls) {
       lines.push(pdfLine("Walls", { size: 11, font: "bold", color: PDF_THEME.navy, gapAfter: 2 }));
       lines.push(pdfLine(`Dimensions: ${formatNumber(project.wallWidth)} ft x ${formatNumber(project.wallLength)} ft x ${formatNumber(project.wallHeight)} ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      if (project.gableArea > 0) {
+        lines.push(pdfLine(`Gable Ends: ${formatNumber(project.gableArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+        lines.push(pdfLine(`Gable Thickness: ${formatNumber(project.gableThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+        lines.push(pdfLine(`Gable Board Feet: ${formatNumber(project.gableBoardFeet)}`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      }
       lines.push(pdfLine(`Thickness: ${formatNumber(project.wallThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
-      lines.push(pdfLine(`Square Footage: ${formatNumber(project.wallArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
+      lines.push(pdfLine(`${project.gableArea > 0 ? "Square Footage with Gables" : "Square Footage"}: ${formatNumber(project.wallArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
       lines.push(pdfLine(`Board Feet: ${formatNumber(project.wallBoardFeet)}`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
       lines.push(pdfLine(`Cost: ${formatCurrency(project.wallCost)}`, { size: 10, color: PDF_THEME.slate, indent: 12, gapAfter: 8 }));
     }
@@ -795,7 +817,6 @@ function buildPdfLines(results) {
 
       if (project.ceilingMode === "Pitched Roof") {
         lines.push(pdfLine(`Pitch: ${formatNumber(project.roofPitch)} in 12`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
-        lines.push(pdfLine(`Roof Surface + Gable Ends: ${formatNumber(project.roofSurfaceArea)} sq ft + ${formatNumber(project.gableArea)} sq ft`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
       }
 
       lines.push(pdfLine(`Thickness: ${formatNumber(project.ceilingThickness)} inches`, { size: 10, color: PDF_THEME.ink, indent: 12 }));
@@ -1261,7 +1282,12 @@ function createCompleteResultCard(project) {
     metricRows.push(metricRow("Wall Length", `${formatNumber(project.wallLength)} ft`));
     metricRows.push(metricRow("Wall Height", `${formatNumber(project.wallHeight)} ft`));
     metricRows.push(metricRow("Wall Sq Ft Math", getWallMathText(project, project.wallArea)));
-    metricRows.push(metricRow("Wall Square Footage", `${formatNumber(project.wallArea)} sq ft`));
+    if (project.gableArea > 0) {
+      metricRows.push(metricRow("Gable End Square Footage", `${formatNumber(project.gableArea)} sq ft`));
+      metricRows.push(metricRow("Gable Thickness", `${formatNumber(project.gableThickness)} inches`));
+      metricRows.push(metricRow("Gable Board Feet", formatNumber(project.gableBoardFeet)));
+    }
+    metricRows.push(metricRow(project.gableArea > 0 ? "Wall Square Footage with Gables" : "Wall Square Footage", `${formatNumber(project.wallArea)} sq ft`));
     metricRows.push(metricRow("Wall Thickness", `${formatNumber(project.wallThickness)} inches`));
     metricRows.push(metricRow("Wall Board Feet", formatNumber(project.wallBoardFeet)));
   }
@@ -1273,7 +1299,6 @@ function createCompleteResultCard(project) {
 
     if (project.ceilingMode === "Pitched Roof") {
       metricRows.push(metricRow("Roof Pitch", `${formatNumber(project.roofPitch)} in 12`));
-      metricRows.push(metricRow("Gable End Square Footage", `${formatNumber(project.gableArea)} sq ft`));
     }
 
     metricRows.push(metricRow("Roof/Ceiling Sq Ft Math", getCeilingMathText(project, project.ceilingOrRoofArea)));
@@ -1344,6 +1369,14 @@ function createInProgressResultCard(snapshot) {
 
     if (hasPositiveNumber(snapshot.data.wallThickness)) {
       metricRows.push(metricRow("Wall Thickness", `${formatNumber(snapshot.data.wallThickness)} inches`));
+    }
+
+    if (
+      needsCeiling
+      && snapshot.data.ceilingMode === "Pitched Roof"
+      && hasPositiveNumber(snapshot.data.wallThickness)
+    ) {
+      metricRows.push(metricRow("Gable Thickness", `${formatNumber(snapshot.data.wallThickness)} inches`));
     }
   }
 
