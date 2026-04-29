@@ -715,7 +715,6 @@ function buildPdfLines(results) {
   const lines = [
     pdfLine("XTREME ALASKA SPRAY FOAM", { size: 19, font: "bold", gapAfter: 8 }),
     pdfLine("Customer Estimate", { size: 13, font: "bold", gapAfter: 8 }),
-    pdfLine("Troy | (907)315-0862 | xtremealaskasprayfoam@gmail.com", { size: 10, gapAfter: 10 }),
     pdfLine("Customer Contact", { size: 11, font: "bold", gapAfter: 2 }),
     pdfLine(`Name: ${results.contact.firstName} ${results.contact.lastName}`.trim(), { size: 10, indent: 12 }),
     ...(results.contact.phone && results.contact.email
